@@ -2,4 +2,3 @@
 *.pyc
 .env/*
 .ipynb_checkpoints
-cs231n/datasets
