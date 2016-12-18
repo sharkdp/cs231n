@@ -1,6 +1,5 @@
 from __future__ import print_function
 import numpy as np
-from random import shuffle
 
 
 def softmax_loss_naive(W, X, y, reg):
@@ -100,16 +99,22 @@ def softmax_loss_vectorized(W, X, y, reg):
     log_prob = exp_scores[range(num_train), y] / norm
     loss = np.sum(-np.log(log_prob))
 
-    print("W ~ ", W.shape)
-    print("X ~ ", X.shape)
-    print("exp_scores ~ ", exp_scores.shape)
-    print("norm ~ ", norm.shape)
-    print("y ~ ", y.shape)
+    # print("W ~ ", W.shape)
+    # print("X ~ ", X.shape)
+    # print("exp_scores ~ ", exp_scores.shape)
+    # print("norm ~ ", norm.shape)
+    # print("y ~ ", y.shape)
+    # print("dW[:, y] ~ ", dW[:, y].shape)
+    # print("X[range(num_train), :] ~", X[range(num_train), :].shape)
 
     # gradient
-    # for i in range(num_train):
-    #     dW[:, y[i]] -= X[i, :]
-    dW[range(num_train), y] -= np.sum(X, axis=1)
+
+    # TODO: how to vectorize this loop?
+    for i in range(num_train):
+        dW[:, y[i]] -= X[i, :]
+
+    # dW[:, y] -= X.T  # this does not work :-(
+
     dW += np.dot(exp_scores.T / norm, X).T
 
     loss /= num_train
