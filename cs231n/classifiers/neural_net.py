@@ -76,13 +76,14 @@ class TwoLayerNet(object):
         #
 
         # first layer (fully connected)
-        scores = X.dot(W1) + b1
+        scores1 = X.dot(W1) + b1
 
         # ReLU
-        scores[scores < 0] = 0
+        scores1_relu = scores1
+        scores1_relu[scores1_relu < 0] = 0
 
         # second layer (fully connected)
-        scores = scores.dot(W2) + b2
+        scores = scores1_relu.dot(W2) + b2
 
         #
         # END OF YOUR CODE
