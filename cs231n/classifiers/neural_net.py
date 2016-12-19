@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class TwoLayerNet(object):
@@ -71,13 +70,22 @@ class TwoLayerNet(object):
         # Compute the forward pass
         scores = None
         #
-        # TODO: Perform the forward pass, computing the class scores for the input. #
-        # Store the result in the scores variable, which should be an array of      #
-        # shape (N, C).                                                             #
+        # TODO: Perform the forward pass, computing the class scores for the input.
+        # Store the result in the scores variable, which should be an array of
+        # shape (N, C).
         #
-        pass
+
+        # first layer (fully connected)
+        scores = X.dot(W1) + b1
+
+        # ReLU
+        scores[scores < 0] = 0
+
+        # second layer (fully connected)
+        scores = scores.dot(W2) + b2
+
         #
-        # END OF YOUR CODE                             #
+        # END OF YOUR CODE
         #
 
         # If the targets are not given then jump out, we're done
@@ -87,27 +95,36 @@ class TwoLayerNet(object):
         # Compute the loss
         loss = None
         #
-        # TODO: Finish the forward pass, and compute the loss. This should include  #
-        # both the data loss and L2 regularization for W1 and W2. Store the result  #
-        # in the variable loss, which should be a scalar. Use the Softmax           #
-        # classifier loss. So that your results match ours, multiply the            #
-        # regularization loss by 0.5                                                #
+        # TODO: Finish the forward pass, and compute the loss. This should include
+        # both the data loss and L2 regularization for W1 and W2. Store the result
+        # in the variable loss, which should be a scalar. Use the Softmax
+        # classifier loss. So that your results match ours, multiply the
+        # regularization loss by 0.5
         #
-        pass
+
+        exp_scores = np.exp(scores)
+        norm = np.sum(exp_scores, axis=1)
+        log_prob = exp_scores[range(N), y] / norm
+        loss = np.sum(-np.log(log_prob))
+
+        loss /= N
+
+        loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+
         #
-        # END OF YOUR CODE                             #
+        # END OF YOUR CODE
         #
 
         # Backward pass: compute gradients
         grads = {}
         #
-        # TODO: Compute the backward pass, computing the derivatives of the weights #
-        # and biases. Store the results in the grads dictionary. For example,       #
-        # grads['W1'] should store the gradient on W1, and be a matrix of same size #
+        # TODO: Compute the backward pass, computing the derivatives of the weights
+        # and biases. Store the results in the grads dictionary. For example,
+        # grads['W1'] should store the gradient on W1, and be a matrix of same size
         #
         pass
         #
-        # END OF YOUR CODE                             #
+        # END OF YOUR CODE
         #
 
         return loss, grads
