@@ -31,9 +31,9 @@ def softmax_loss_naive(W, X, y, reg):
     # regularization!                                                        #
     ##########################################################################
 
-    num_train = X.shape[0]
+    N = X.shape[0]
 
-    for i in xrange(num_train):
+    for i in xrange(N):
         scores = np.dot(X[i, :], W)
 
         # for numerical stability, does not change the result:
@@ -47,8 +47,8 @@ def softmax_loss_naive(W, X, y, reg):
         dW[:, y[i]] -= X[i, :]
         dW += np.outer(X[i, :], exp_scores / norm)
 
-    loss /= num_train
-    dW /= num_train
+    loss /= N
+    dW /= N
 
     loss += reg * np.sum(W * W)
     dW += reg * W
@@ -71,10 +71,10 @@ def softmax_loss_vectorized(W, X, y, reg):
     dW = np.zeros_like(W)
 
     ##########################################################################
-    # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
-    # Store the loss in loss and the gradient in dW. If you are not careful     #
-    # here, it is easy to run into numeric instability. Don't forget the        #
-    # regularization!                                                           #
+    # TODO: Compute the softmax loss and its gradient using no explicit loops.
+    # Store the loss in loss and the gradient in dW. If you are not careful
+    # here, it is easy to run into numeric instability. Don't forget the
+    # regularization!
     ##########################################################################
     # Inputs:
     # - W: A numpy array of shape (D, C) containing weights.
@@ -87,7 +87,8 @@ def softmax_loss_vectorized(W, X, y, reg):
     # norm ~ (N, )
     # exp_scores[y].T / norm ~ (C, N)
 
-    num_train = X.shape[0]
+    N = X.shape[0]
+    C = W.shape[1]
 
     scores = np.dot(X, W)
 
@@ -96,34 +97,24 @@ def softmax_loss_vectorized(W, X, y, reg):
 
     exp_scores = np.exp(scores)
     norm = np.sum(exp_scores, axis=1)
-    log_prob = exp_scores[range(num_train), y] / norm
+    log_prob = exp_scores[range(N), y] / norm
     loss = np.sum(-np.log(log_prob))
 
-    # print("W ~ ", W.shape)
-    # print("X ~ ", X.shape)
-    # print("exp_scores ~ ", exp_scores.shape)
-    # print("norm ~ ", norm.shape)
-    # print("y ~ ", y.shape)
-    # print("dW[:, y] ~ ", dW[:, y].shape)
-    # print("X[range(num_train), :] ~", X[range(num_train), :].shape)
-
-    # gradient
-
-    # TODO: how to vectorize this loop?
-    for i in range(num_train):
-        dW[:, y[i]] -= X[i, :]
-
-    # dW[:, y] -= X.T  # this does not work :-(
-
-    dW += np.dot(exp_scores.T / norm, X).T
-
-    loss /= num_train
-    dW /= num_train
+    loss /= N
 
     loss += reg * np.sum(W * W)
+
+    # gradient
+    A = np.equal(y[np.newaxis, :],
+                 np.arange(C)[:, np.newaxis])
+
+    dW -= A.dot(X).T
+    dW += np.dot(exp_scores.T / norm, X).T
+
+    dW /= N
     dW += reg * W
     ##########################################################################
-    #                          END OF YOUR CODE                                 #
+    #                          END OF YOUR CODE                              #
     ##########################################################################
 
     return loss, dW
