@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 
@@ -79,11 +80,11 @@ class TwoLayerNet(object):
         scores1 = X.dot(W1) + b1
 
         # ReLU
-        activation1 = scores1
-        activation1[scores1 < 0] = 0
+        activations1 = np.copy(scores1)
+        activations1[scores1 < 0] = 0
 
         # second layer (fully connected)
-        scores = activation1.dot(W2) + b2
+        scores = activations1.dot(W2) + b2
 
         #
         # END OF YOUR CODE
@@ -106,9 +107,7 @@ class TwoLayerNet(object):
         exp_scores = np.exp(scores)
         norm = np.sum(exp_scores, axis=1)
         log_prob = exp_scores[range(N), y] / norm
-        loss = np.sum(-np.log(log_prob))
-
-        loss /= N
+        loss = np.mean(-np.log(log_prob))
 
         loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
 
@@ -117,13 +116,71 @@ class TwoLayerNet(object):
         #
 
         # Backward pass: compute gradients
-        grads = {}
         #
         # TODO: Compute the backward pass, computing the derivatives of the weights
         # and biases. Store the results in the grads dictionary. For example,
         # grads['W1'] should store the gradient on W1, and be a matrix of same size
         #
-        pass
+
+        H = W1.shape[1]
+        C = scores.shape[1]
+
+        assert X.shape == (N, D)
+        assert y.shape == (N,)
+        assert scores1.shape == (N, H)
+        assert activations1.shape == (N, H)
+        assert scores.shape == (N, C)
+        assert norm.shape == (N,)
+        assert W1.shape == (D, H)
+        assert b1.shape == (H,)
+        assert W2.shape == (H, C)
+        assert b2.shape == (C,)
+
+        dW1 = np.zeros_like(W1)
+        dW2 = np.zeros_like(W2)
+        db1 = np.zeros_like(b1)
+        db2 = np.zeros_like(b2)
+
+        # Backprop into scores
+        flags = np.equal(y[:, np.newaxis],
+                         np.arange(C)[np.newaxis, :]).astype(np.float)
+        dscores = -flags + exp_scores / norm[:, np.newaxis]
+
+        assert dscores.shape == (N, C)
+
+        # Backprop into W2. The local gradient with respect to W2 is just
+        # activations1, so we have to multiply by that.
+        dW2 = np.dot(activations1.T, dscores) / N
+        dW2 += reg * W2
+
+        # Backprop into b2. The local gradient is just 1, so this is equal
+        # to dscores, averaged over all training samples.
+        db2 = np.mean(dscores, axis=0)
+
+        # Backprop into activations1 (local gradient is W2)
+        dactivations1 = np.dot(dscores, W2.T)
+
+        assert dactivations1.shape == (N, H)
+
+        # Backprop into scores1 (local gradient is one, except where
+        # scores1 < 0.
+        dscores1 = np.copy(dactivations1)
+        dscores1[scores1 < 0] = 0
+
+        # Backprop into W1
+        dW1 = np.dot(X.T, dscores1) / N
+        dW1 += reg * W1
+
+        # Backprop into b1
+        db1 = np.mean(dscores1, axis=0)
+
+        grads = {
+            "W1": dW1,
+            "W2": dW2,
+            "b1": db1,
+            "b2": db2
+        }
+
         #
         # END OF YOUR CODE
         #
@@ -188,7 +245,7 @@ class TwoLayerNet(object):
             #
 
             if verbose and it % 100 == 0:
-                print 'iteration %d / %d: loss %f' % (it, num_iters, loss)
+                print('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
             # Every epoch, check train and val accuracy and decay learning
             # rate.
