@@ -221,12 +221,14 @@ class TwoLayerNet(object):
             y_batch = None
 
             #
-            # TODO: Create a random minibatch of training data and labels, storing  #
-            # them in X_batch and y_batch respectively.                             #
+            # TODO: Create a random minibatch of training data and labels, storing
+            # them in X_batch and y_batch respectively.
             #
-            pass
+            batch_ind = np.random.choice(num_train, size=batch_size, replace=True)
+            X_batch = X[batch_ind, :]
+            y_batch = y[batch_ind]
             #
-            # END OF YOUR CODE                          #
+            # END OF YOUR CODE
             #
 
             # Compute loss and gradients using the current minibatch
@@ -234,14 +236,17 @@ class TwoLayerNet(object):
             loss_history.append(loss)
 
             #
-            # TODO: Use the gradients in the grads dictionary to update the         #
-            # parameters of the network (stored in the dictionary self.params)      #
-            # using stochastic gradient descent. You'll need to use the gradients   #
-            # stored in the grads dictionary defined above.                         #
+            # TODO: Use the gradients in the grads dictionary to update the
+            # parameters of the network (stored in the dictionary self.params)
+            # using stochastic gradient descent. You'll need to use the gradients
+            # stored in the grads dictionary defined above.
             #
-            pass
+
+            for key in self.params.keys():
+                self.params[key] -= learning_rate * grads[key]
+
             #
-            # END OF YOUR CODE                          #
+            # END OF YOUR CODE
             #
 
             if verbose and it % 100 == 0:
@@ -251,8 +256,8 @@ class TwoLayerNet(object):
             # rate.
             if it % iterations_per_epoch == 0:
                 # Check accuracy
-                train_acc = (self.predict(X_batch) == y_batch).mean()
-                val_acc = (self.predict(X_val) == y_val).mean()
+                train_acc = np.equal(self.predict(X_batch), y_batch).astype(np.float).mean()
+                val_acc = np.equal(self.predict(X_val), y_val).astype(np.float).mean()
                 train_acc_history.append(train_acc)
                 val_acc_history.append(val_acc)
 
@@ -283,11 +288,26 @@ class TwoLayerNet(object):
         y_pred = None
 
         #
-        # TODO: Implement this function; it should be VERY simple!                #
+        # TODO: Implement this function; it should be VERY simple!
         #
-        pass
+
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+
+        # first layer (fully connected)
+        scores1 = X.dot(W1) + b1
+
+        # ReLU
+        activations1 = np.copy(scores1)
+        activations1[scores1 < 0] = 0
+
+        # second layer (fully connected)
+        scores = activations1.dot(W2) + b2
+
+        y_pred = np.argmax(scores, axis=1)
+
         #
-        # END OF YOUR CODE                           #
+        # END OF YOUR CODE
         #
 
         return y_pred
