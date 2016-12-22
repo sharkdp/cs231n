@@ -1,4 +1,4 @@
 *.swp
 *.pyc
-.env/*
+.env
 .ipynb_checkpoints
