@@ -45,8 +45,12 @@ class TwoLayerNet(object):
         # with first layer weights and biases using the keys 'W1' and 'b1' and
         # second layer weights and biases using the keys 'W2' and 'b2'.
         #######################################################################
-        self.params["W1"] = np.random.normal(loc=0.0, scale=weight_scale, size=(input_dim, hidden_dim))
-        self.params["W2"] = np.random.normal(loc=0.0, scale=weight_scale, size=(hidden_dim, num_classes))
+        self.params["W1"] = np.random.normal(loc=0.0,
+                                             scale=weight_scale,
+                                             size=(input_dim, hidden_dim))
+        self.params["W2"] = np.random.normal(loc=0.0,
+                                             scale=weight_scale,
+                                             size=(hidden_dim, num_classes))
         self.params["b1"] = np.zeros((hidden_dim,))
         self.params["b2"] = np.zeros((num_classes,))
 
@@ -190,23 +194,23 @@ class FullyConnectedNet(object):
         #######################################################################
 
         # Initialize the weights for num_layers affine layers
-        for l, hidden_dim in enumerate(hidden_dims):
+        for l in range(self.num_layers):
             if l == 0:
                 in_dim = input_dim
             else:
                 in_dim = hidden_dims[l - 1]
 
-            if l == len(hidden_dims) - 1:
+            if l == len(hidden_dims):
                 out_dim = num_classes
             else:
                 out_dim = hidden_dims[l]
 
-            self.params["W{}".format(l)] = np.random.normal(
+            self.params["W{}".format(l + 1)] = np.random.normal(
                 loc=0.0,
                 scale=weight_scale,
                 size=(in_dim, out_dim)
             )
-            self.params["b{}".format(l)] = np.zeros((hidden_dim,))
+            self.params["b{}".format(l + 1)] = np.zeros((out_dim,))
 
         #######################################################################
         #                             END OF YOUR CODE                        #
@@ -273,7 +277,25 @@ class FullyConnectedNet(object):
         # pass self.bn_params[1] to the forward pass for the second batch
         # normalization layer, etc.
         #######################################################################
-        pass
+        IN = X
+
+        caches = {}
+        for l in range(self.num_layers - 1):
+            W = self.params["W{}".format(l + 1)]
+            b = self.params["b{}".format(l + 1)]
+
+            IN, cache = affine_relu_forward(IN, W, b)
+            caches["W{}".format(l + 1)] = cache
+
+        # forward pass: last affine layer
+        num_last = self.num_layers
+        name_W_last = "W{}".format(num_last)
+        name_b_last = "b{}".format(num_last)
+        W_last = self.params[name_W_last]
+        b_last = self.params[name_b_last]
+
+        scores, cache_last = affine_forward(IN, W_last, b_last)
+
         #######################################################################
         #                             END OF YOUR CODE                        #
         #######################################################################
@@ -297,7 +319,28 @@ class FullyConnectedNet(object):
         # the automated tests, make sure that your L2 regularization includes a
         # factor of 0.5 to simplify the expression for the gradient.
         #######################################################################
-        pass
+
+        # loss
+        loss, dscores = softmax_loss(scores, y)
+
+        # regularization loss
+        for l in range(self.num_layers):
+            W = self.params["W{}".format(l + 1)]
+            loss += 0.5 * self.reg * np.sum(W * W)
+
+        # backprop through last affine layer
+        dx, dw, db = affine_backward(dscores, cache_last)
+        grads[name_W_last] = dw + self.reg * W_last
+        grads[name_b_last] = db
+
+        # backprop through hidden layers
+        for l in reversed(range(self.num_layers - 1)):
+            name_W = "W{}".format(l + 1)
+            name_b = "b{}".format(l + 1)
+            dx, dw, db = affine_relu_backward(dx, caches[name_W])
+            grads[name_W] = dw + self.reg * self.params[name_W]
+            grads[name_b] = db
+
         #######################################################################
         #                             END OF YOUR CODE                        #
         #######################################################################
