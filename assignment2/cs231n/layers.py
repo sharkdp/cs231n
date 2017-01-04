@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 
 
@@ -182,15 +183,16 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
         # Batch norm forward pass
         sample_mean = x.mean(axis=0)
-        sample_var = x.std(axis=0)
+        sample_var = x.var(axis=0)
 
-        sample_var_safe = np.sqrt(sample_var**2 + eps)
-        x_white = (x - sample_mean) / sample_var_safe
+        sample_std = np.sqrt(sample_var + eps)
 
-        out = x_white * gamma + beta
+        x_white = (x - sample_mean) / sample_std
+
+        out = gamma * x_white + beta
 
         # update cache for backward pass
-        cache = (x_white, gamma, beta, sample_var_safe)
+        cache = (x, x_white, gamma, sample_mean, sample_var, sample_std)
 
         # update the running averages
         running_mean = momentum * running_mean + (1 - momentum) * sample_mean
@@ -207,7 +209,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # the out variable.                                                         #
         #######################################################################
 
-        x_white = (x - running_mean) / np.sqrt(running_var**2 + eps)
+        x_white = (x - running_mean) / np.sqrt(running_var + eps)
 
         out = x_white * gamma + beta
 
@@ -243,12 +245,26 @@ def batchnorm_backward(dout, cache):
     """
     dx, dgamma, dbeta = None, None, None
     ##########################################################################
-    # TODO: Implement the backward pass for batch normalization. Store the      #
-    # results in the dx, dgamma, and dbeta variables.                           #
+    # TODO: Implement the backward pass for batch normalization. Store the   #
+    # results in the dx, dgamma, and dbeta variables.                        #
     ##########################################################################
-    pass
+
+    x, x_white, gamma, sample_mean, sample_var, sample_std = cache
+
+    N = dout.shape[0]
+
+    dgamma = np.sum(x_white * dout, axis=0)
+    dbeta = np.sum(dout, axis=0)
+
+    dmean = - gamma / sample_std * np.sum(dout, axis=0)
+    dstd = - gamma / sample_std * dgamma
+    dvar = dstd / (2 * sample_std)
+
+    dx = np.zeros_like(x)
+    dx = dmean / N + 2 / N * dvar * (x - sample_mean) + dout * gamma / sample_std
+
     ##########################################################################
-    #                             END OF YOUR CODE                              #
+    #                             END OF YOUR CODE                           #
     ##########################################################################
 
     return dx, dgamma, dbeta
