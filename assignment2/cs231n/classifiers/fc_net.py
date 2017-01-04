@@ -1,6 +1,7 @@
 import numpy as np
 
-from cs231n.layers import affine_forward, affine_backward, softmax_loss
+from cs231n.layers import affine_forward, affine_backward, softmax_loss, \
+    dropout_forward, dropout_backward
 from cs231n.layer_utils import affine_relu_forward, affine_relu_backward, \
     affine_batchnorm_relu_forward, affine_batchnorm_relu_backward
 
@@ -285,6 +286,9 @@ class FullyConnectedNet(object):
         IN = X
 
         caches = {}
+        if self.use_dropout:
+            dropout_caches = {}
+
         for l in range(self.num_layers - 1):
             W = self.params["W{}".format(l + 1)]
             b = self.params["b{}".format(l + 1)]
@@ -293,10 +297,14 @@ class FullyConnectedNet(object):
                 gamma = self.params["gamma{}".format(l + 1)]
                 beta = self.params["beta{}".format(l + 1)]
                 IN, cache = affine_batchnorm_relu_forward(IN, W, b, gamma, beta, self.bn_params[l])
-                caches[l] = cache
             else:
                 IN, cache = affine_relu_forward(IN, W, b)
-                caches[l] = cache
+
+            caches[l] = cache
+
+            if self.use_dropout:
+                IN, d_cache = dropout_forward(IN, self.dropout_param)
+                dropout_caches[l] = d_cache
 
         # forward pass: last affine layer
         num_last = self.num_layers
@@ -348,6 +356,10 @@ class FullyConnectedNet(object):
         for l in reversed(range(self.num_layers - 1)):
             name_W = "W{}".format(l + 1)
             name_b = "b{}".format(l + 1)
+
+            if self.use_dropout:
+                dx = dropout_backward(dx, dropout_caches[l])
+
             if self.use_batchnorm:
                 dx, dw, db, dgamma, dbeta = affine_batchnorm_relu_backward(dx, caches[l])
                 grads["gamma{}".format(l + 1)] = dgamma
