@@ -1,5 +1,5 @@
 from cs231n.layers import affine_forward, affine_backward, relu_forward, \
-    relu_backward
+    relu_backward, batchnorm_forward, batchnorm_backward
 from cs231n.fast_layers import conv_forward_fast, conv_backward_fast, \
     max_pool_forward_fast, max_pool_backward_fast
 
@@ -30,6 +30,36 @@ def affine_relu_backward(dout, cache):
     da = relu_backward(dout, relu_cache)
     dx, dw, db = affine_backward(da, fc_cache)
     return dx, dw, db
+
+
+def affine_batchnorm_relu_forward(x, w, b, gamma, beta, bn_param):
+    """
+    Convenience layer that performs Affine->BatchNorm->ReLU
+
+    Inputs:
+    - x: Input to the affine layer
+    - w, b: Weights for the affine layer
+
+    Returns a tuple of:
+    - out: Output from the ReLU
+    - cache: Object to give to the backward pass
+    """
+    a, fc_cache = affine_forward(x, w, b)
+    b, bn_cache = batchnorm_forward(a, gamma, beta, bn_param)
+    out, relu_cache = relu_forward(b)
+    cache = (fc_cache, bn_cache, relu_cache)
+    return out, cache
+
+
+def affine_batchnorm_relu_backward(dout, cache):
+    """
+    Backward pass for the Affine->BatchNorm->ReLU convenience layer
+    """
+    fc_cache, bn_cache, relu_cache = cache
+    da = relu_backward(dout, relu_cache)
+    dan, dgamma, dbeta = batchnorm_backward(da, bn_cache)
+    dx, dw, db = affine_backward(dan, fc_cache)
+    return dx, dw, db, dgamma, dbeta
 
 
 def conv_relu_forward(x, w, b, conv_param):

@@ -1,7 +1,8 @@
 import numpy as np
 
 from cs231n.layers import affine_forward, affine_backward, softmax_loss
-from cs231n.layer_utils import affine_relu_forward, affine_relu_backward
+from cs231n.layer_utils import affine_relu_forward, affine_relu_backward, \
+    affine_batchnorm_relu_forward, affine_batchnorm_relu_backward
 
 
 class TwoLayerNet(object):
@@ -212,6 +213,10 @@ class FullyConnectedNet(object):
             )
             self.params["b{}".format(l + 1)] = np.zeros((out_dim,))
 
+            if self.use_batchnorm and l != self.num_layers - 1:
+                self.params["gamma{}".format(l + 1)] = np.ones((out_dim,))
+                self.params["beta{}".format(l + 1)] = np.zeros((out_dim,))
+
         #######################################################################
         #                             END OF YOUR CODE                        #
         #######################################################################
@@ -284,8 +289,14 @@ class FullyConnectedNet(object):
             W = self.params["W{}".format(l + 1)]
             b = self.params["b{}".format(l + 1)]
 
-            IN, cache = affine_relu_forward(IN, W, b)
-            caches["W{}".format(l + 1)] = cache
+            if self.use_batchnorm:
+                gamma = self.params["gamma{}".format(l + 1)]
+                beta = self.params["beta{}".format(l + 1)]
+                IN, cache = affine_batchnorm_relu_forward(IN, W, b, gamma, beta, self.bn_params[l])
+                caches[l] = cache
+            else:
+                IN, cache = affine_relu_forward(IN, W, b)
+                caches[l] = cache
 
         # forward pass: last affine layer
         num_last = self.num_layers
@@ -333,11 +344,16 @@ class FullyConnectedNet(object):
         grads[name_W_last] = dw + self.reg * W_last
         grads[name_b_last] = db
 
-        # backprop through hidden layers
+        # backprop through affine-batchnorm-relu layers
         for l in reversed(range(self.num_layers - 1)):
             name_W = "W{}".format(l + 1)
             name_b = "b{}".format(l + 1)
-            dx, dw, db = affine_relu_backward(dx, caches[name_W])
+            if self.use_batchnorm:
+                dx, dw, db, dgamma, dbeta = affine_batchnorm_relu_backward(dx, caches[l])
+                grads["gamma{}".format(l + 1)] = dgamma
+                grads["beta{}".format(l + 1)] = dbeta
+            else:
+                dx, dw, db = affine_relu_backward(dx, caches[l])
             grads[name_W] = dw + self.reg * self.params[name_W]
             grads[name_b] = db
 
