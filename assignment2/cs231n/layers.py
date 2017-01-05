@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import print_function
 import numpy as np
 
 
@@ -396,7 +397,7 @@ def conv_forward_naive(x, w, b, conv_param):
 
     The input consists of N data points, each with C channels, height H and width
     W. We convolve each input with F different filters, where each filter spans
-    all C channels and has height HH and width HH.
+    all C channels and has height HH and width WW.
 
     Input:
     - x: Input data of shape (N, C, H, W)
@@ -415,12 +416,35 @@ def conv_forward_naive(x, w, b, conv_param):
     """
     out = None
     ##########################################################################
-    # TODO: Implement the convolutional forward pass.                           #
-    # Hint: you can use the function np.pad for padding.                        #
+    # TODO: Implement the convolutional forward pass.
+    # Hint: you can use the function np.pad for padding.
     ##########################################################################
-    pass
+
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+
+    Ho = int(1 + (H + 2 * pad - HH) / stride)
+    Wo = int(1 + (W + 2 * pad - WW) / stride)
+
+    out = np.zeros((N, F, Ho, Wo))
+
+    x_padded = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)),
+                      'constant', constant_values=(0, 0))
+
+    in_x = 0
+    in_y = 0
+    for y in range(Ho):
+        in_y = y * stride
+        for x in range(Wo):
+            in_x = x * stride
+            input_patch = x_padded[:, :, in_y:(in_y + HH), in_x:(in_x + WW)]
+            out[:, :, y, x] = np.tensordot(input_patch, w, axes=([1, 2, 3], [1, 2, 3])) + b
+
     ##########################################################################
-    #                             END OF YOUR CODE                              #
+    #                             END OF YOUR CODE                           #
     ##########################################################################
     cache = (x, w, b, conv_param)
     return out, cache
