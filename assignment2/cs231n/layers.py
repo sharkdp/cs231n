@@ -469,7 +469,7 @@ def conv_backward_naive(dout, cache):
     ##########################################################################
     pass
     ##########################################################################
-    #                             END OF YOUR CODE                              #
+    #                             END OF YOUR CODE                           #
     ##########################################################################
     return dx, dw, db
 
@@ -491,7 +491,7 @@ def max_pool_forward_naive(x, pool_param):
     """
     out = None
     ##########################################################################
-    # TODO: Implement the max pooling forward pass                              #
+    # TODO: Implement the max pooling forward pass                           #
     ##########################################################################
 
     pool_height = pool_param['pool_height']
@@ -514,7 +514,7 @@ def max_pool_forward_naive(x, pool_param):
             out[:, :, i, j] = patch.max(axis=(2, 3))
 
     ##########################################################################
-    #                             END OF YOUR CODE                              #
+    #                             END OF YOUR CODE                           #
     ##########################################################################
     cache = (x, pool_param)
     return out, cache
@@ -533,11 +533,42 @@ def max_pool_backward_naive(dout, cache):
     """
     dx = None
     ##########################################################################
-    # TODO: Implement the max pooling backward pass                             #
+    # TODO: Implement the max pooling backward pass                          #
     ##########################################################################
-    pass
+
+    x, pool_param = cache
+
+    pool_height = pool_param['pool_height']
+    pool_width = pool_param['pool_width']
+    stride = pool_param['stride']
+
+    N, C, H, W = x.shape
+
+    HH = int(H / stride)
+    WW = int(W / stride)
+
+    assert dout.shape == (N, C, HH, WW)
+
+    dx = np.zeros_like(x)
+
+    for i in range(HH):
+        i_stride = i * stride
+        for j in range(WW):
+            j_stride = j * stride
+            for n in range(N):
+                for c in range(C):
+                    patch = x[n, c, i_stride:(i_stride + pool_height), j_stride:(j_stride + pool_width)]
+
+                    # Find out which input pixel was the one with the max value
+                    ind_max = patch.argmax()
+                    ind_y, ind_x = np.unravel_index(ind_max, dims=(pool_height, pool_width))
+                    ind_y += i_stride
+                    ind_x += j_stride
+
+                    # ... and then backprop only into this single pixel
+                    dx[n, c, ind_y, ind_x] = dout[n, c, i, j]
     ##########################################################################
-    #                             END OF YOUR CODE                              #
+    #                             END OF YOUR CODE                           #
     ##########################################################################
     return dx
 
