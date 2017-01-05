@@ -436,12 +436,12 @@ def conv_forward_naive(x, w, b, conv_param):
 
     in_x = 0
     in_y = 0
-    for y in range(Ho):
-        in_y = y * stride
-        for x in range(Wo):
-            in_x = x * stride
+    for j in range(Ho):
+        in_y = j * stride
+        for i in range(Wo):
+            in_x = i * stride
             input_patch = x_padded[:, :, in_y:(in_y + HH), in_x:(in_x + WW)]
-            out[:, :, y, x] = np.tensordot(input_patch, w, axes=([1, 2, 3], [1, 2, 3])) + b
+            out[:, :, j, i] = np.tensordot(input_patch, w, axes=([1, 2, 3], [1, 2, 3])) + b
 
     ##########################################################################
     #                             END OF YOUR CODE                           #
