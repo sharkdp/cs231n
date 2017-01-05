@@ -446,7 +446,7 @@ def conv_forward_naive(x, w, b, conv_param):
     ##########################################################################
     #                             END OF YOUR CODE                           #
     ##########################################################################
-    cache = (x, w, b, conv_param)
+    cache = (x, x_padded, w, b, conv_param)
     return out, cache
 
 
@@ -465,7 +465,7 @@ def conv_backward_naive(dout, cache):
     """
     dx, dw, db = None, None, None
     ##########################################################################
-    # TODO: Implement the convolutional backward pass.                          #
+    # TODO: Implement the convolutional backward pass.                       #
     ##########################################################################
     pass
     ##########################################################################
